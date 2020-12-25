@@ -1,4 +1,5 @@
 # Duct
+Provide publisher and SwiftUI view with cacheable image downloader.
 
 ## Installation
 ```swift
