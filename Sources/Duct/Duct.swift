@@ -26,7 +26,7 @@ public struct DownloadImage<Content: View>: View {
     private let publisher: DownloadImagePublisher
     private let errorImage: ImageData
     private let builder: (Image)->Content
-    public init(url: URL, builder: @escaping ((Image)->Content), placeholder: ImageData?, errorImage: ImageData?) {
+    public init(url: URL, builder: @escaping ((Image)->Content), placeholder: ImageData? = nil, errorImage: ImageData? = nil) {
         publisher = .init(url: url)
         self.errorImage = errorImage ?? ImageData()
         self._image = .init(initialValue: placeholder ?? ImageData())
