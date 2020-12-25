@@ -73,7 +73,7 @@ class DownloadImageSubscription<SubscriberType: Subscriber>: Subscription where 
         self.disposeBag = .init()
     }
     func request(_ demand: Subscribers.Demand) {
-        if let image = cache.object(forKey: url as NSURL) {
+        if let image = cache.object(forKey: url.absoluteURL as NSURL) {
             _ = subscriber?.receive(image)
             self.subscriber?.receive(completion: .finished)
         } else {
@@ -89,7 +89,7 @@ class DownloadImageSubscription<SubscriberType: Subscriber>: Subscription where 
                 }, receiveValue: { [weak self] (data, result) in
                     guard let self = self else { return }
                     if let image = ImageData(data: data) {
-                        self.cache.setObject(image, forKey: self.url as NSURL)
+                        self.cache.setObject(image, forKey: self.url.absoluteURL as NSURL)
                         _ = self.subscriber?.receive(image)
                         self.subscriber?.receive(completion: .finished)
                     } else {
