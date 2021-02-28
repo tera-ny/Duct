@@ -21,23 +21,37 @@ extension Image {
     }
 }
 
+class DownloadImageViewModel: ObservableObject {
+    @Published private(set) var image: ImageData
+    private var disposeBag = Set<AnyCancellable>()
+    init(publisher: DownloadImagePublisher, placeholder: ImageData?, brokenImage: ImageData?, onError: @escaping ((ImageError)->Void) = {_ in}) {
+        self.image = placeholder ?? ImageData()
+        publisher
+            .sink(receiveCompletion: { [weak self] completion in
+                switch completion {
+                case .failure(let error):
+                    onError(error)
+                    if let brokenImage = brokenImage {
+                        self?.image = brokenImage
+                    }
+                case .finished: break
+                }
+            }, receiveValue: { [weak self] image in
+                self?.image = image
+            })
+            .store(in: &disposeBag)
+    }
+}
+
 public struct DownloadImage<Content: View>: View {
-    @State private var image: ImageData
-    private let publisher: DownloadImagePublisher
-    private let errorImage: ImageData
+    @ObservedObject private var viewModel: DownloadImageViewModel
     private let builder: (Image)->Content
-    public init(url: URL, builder: @escaping ((Image)->Content), placeholder: ImageData? = nil, errorImage: ImageData? = nil) {
-        publisher = .init(url: url)
-        self.errorImage = errorImage ?? ImageData()
-        self._image = .init(initialValue: placeholder ?? ImageData())
+    public init(url: URL, builder: @escaping ((Image)->Content), placeholder: ImageData? = nil, brokenImage: ImageData? = nil, onError: @escaping ((ImageError)->Void) = {_ in}) {
+        self._viewModel = .init(initialValue: .init(publisher: .init(url: url), placeholder: placeholder, brokenImage: brokenImage, onError: onError))
         self.builder = builder
     }
     public var body: some View {
-        builder(Image(imageData: image))
-            .onReceive(publisher.receive(on: DispatchQueue.main).replaceError(with: errorImage))
-            { image in
-                self.image = image
-            }
+        builder(Image(imageData: viewModel.image))
     }
 }
 
@@ -46,9 +60,9 @@ public enum ImageError: Error {
     case download(error: URLError)
 }
 
-public struct DownloadImagePublisher: Publisher {
-    public typealias Output = ImageData
-    public typealias Failure = ImageError
+struct DownloadImagePublisher: Publisher {
+    typealias Output = ImageData
+    typealias Failure = ImageError
     let url: URL
     public func receive<S>(subscriber: S) where S : Subscriber, DownloadImagePublisher.Failure == S.Failure, DownloadImagePublisher.Output == S.Input {
         let subscription = DownloadImageSubscription(subscriber: subscriber, url: url)
@@ -109,6 +123,6 @@ class DownloadImageSubscription<SubscriberType: Subscriber>: Subscription where 
 struct Preview: PreviewProvider {
     static var previews: some View {
         DownloadImage(url: URL(string: "https://images.unsplash.com/photo-1608830597604-619220679440?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=934&q=80")!, builder: { $0.resizable()
-        }, placeholder: nil, errorImage: nil)
+        })
     }
 }
