@@ -3,7 +3,7 @@ Provide publisher and SwiftUI view with cacheable image downloader.
 
 ## Installation
 ```swift
-.package(name: "Duct", url: "https://github.com/tera-ny/Duct.git", from: "0.0.2"),
+.package(name: "Duct", url: "https://github.com/tera-ny/Duct.git", from: "0.0.3"),
 ```
 
 ## Usage
